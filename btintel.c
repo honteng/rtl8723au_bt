@@ -69,7 +69,7 @@ int btintel_check_bdaddr(struct hci_dev *hdev)
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(btintel_check_bdaddr);
+EXPORT_SYMBOL(btintel_check_bdaddr);
 
 int btintel_set_bdaddr(struct hci_dev *hdev, const bdaddr_t *bdaddr)
 {
@@ -87,7 +87,7 @@ int btintel_set_bdaddr(struct hci_dev *hdev, const bdaddr_t *bdaddr)
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(btintel_set_bdaddr);
+EXPORT_SYMBOL(btintel_set_bdaddr);
 
 void btintel_hw_error(struct hci_dev *hdev, u8 code)
 {
@@ -121,7 +121,7 @@ void btintel_hw_error(struct hci_dev *hdev, u8 code)
 
 	kfree_skb(skb);
 }
-EXPORT_SYMBOL_GPL(btintel_hw_error);
+EXPORT_SYMBOL(btintel_hw_error);
 
 void btintel_version_info(struct hci_dev *hdev, struct intel_version *ver)
 {
@@ -142,7 +142,7 @@ void btintel_version_info(struct hci_dev *hdev, struct intel_version *ver)
 		variant, ver->fw_revision >> 4, ver->fw_revision & 0x0f,
 		ver->fw_build_num, ver->fw_build_ww, 2000 + ver->fw_build_yy);
 }
-EXPORT_SYMBOL_GPL(btintel_version_info);
+EXPORT_SYMBOL(btintel_version_info);
 
 int btintel_secure_send(struct hci_dev *hdev, u8 fragment_type, u32 plen,
 			const void *param)
@@ -167,7 +167,7 @@ int btintel_secure_send(struct hci_dev *hdev, u8 fragment_type, u32 plen,
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(btintel_secure_send);
+EXPORT_SYMBOL(btintel_secure_send);
 
 MODULE_AUTHOR("Marcel Holtmann <marcel@holtmann.org>");
 MODULE_DESCRIPTION("Bluetooth support for Intel devices ver " VERSION);
