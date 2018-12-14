@@ -33,6 +33,9 @@ else
 all:
 	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KDIR) M=$(PWD) modules
 
+modules_install:
+	$(MAKE) INSTALL_MOD_DIR=$(MODDESTDIR) -C $(KDIR) M=$(shell pwd) modules_install
+
 clean:
 	rm -rf *.o *.mod.c *.mod.o *.ko *.symvers *.order *.a
 endif
