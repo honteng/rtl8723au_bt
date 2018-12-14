@@ -2,17 +2,26 @@ FW_DIR	:= /lib/firmware/rtk_bt
 MDL_DIR	:= /lib/modules/$(shell uname -r)
 DRV_DIR	:= $(MDL_DIR)/kernel/drivers/bluetooth
 
+CONFIG_PLATFORM_FS_MX61 = y
+
+ifeq ($(CONFIG_PLATFORM_FS_MX61), y)
+ARCH := arm
+KDIR ?= $(KERNEL_SRC)
+MODDESTDIR := kernel/drivers/net/wireless/
+else
+KVER := $(shell uname -r)
+KDIR := /lib/modules/$(KVER)/build
+endif
+
 ifneq ($(KERNELRELEASE),)
 
 	obj-m := rtk_btusb.o
 
 else
 	PWD := $(shell pwd)
-	KVER := $(shell uname -r)
-	KDIR := /lib/modules/$(KVER)/build
 
 all:
-	$(MAKE) -C $(KDIR) M=$(PWD) modules
+	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KDIR) M=$(PWD) modules
 
 clean:
 	rm -rf *.o *.mod.c *.mod.o *.ko *.symvers *.order *.a
