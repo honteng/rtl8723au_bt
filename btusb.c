@@ -29,7 +29,7 @@
 #include <net/bluetooth/bluetooth.h>
 #include <net/bluetooth/hci_core.h>
 
-#include "btintel.h"
+// #include "btintel.h"
 #include "btbcm.h"
 #include "btrtl.h"
 
@@ -1376,355 +1376,355 @@ static int btusb_setup_csr(struct hci_dev *hdev)
 	return 0;
 }
 
-static const struct firmware *btusb_setup_intel_get_fw(struct hci_dev *hdev,
-						       struct intel_version *ver)
-{
-	const struct firmware *fw;
-	char fwname[64];
-	int ret;
+// static const struct firmware *btusb_setup_intel_get_fw(struct hci_dev *hdev,
+// 						       struct intel_version *ver)
+// {
+// 	const struct firmware *fw;
+// 	char fwname[64];
+// 	int ret;
+// 
+// 	snprintf(fwname, sizeof(fwname),
+// 		 "intel/ibt-hw-%x.%x.%x-fw-%x.%x.%x.%x.%x.bseq",
+// 		 ver->hw_platform, ver->hw_variant, ver->hw_revision,
+// 		 ver->fw_variant,  ver->fw_revision, ver->fw_build_num,
+// 		 ver->fw_build_ww, ver->fw_build_yy);
+// 
+// 	ret = request_firmware(&fw, fwname, &hdev->dev);
+// 	if (ret < 0) {
+// 		if (ret == -EINVAL) {
+// 			BT_ERR("%s Intel firmware file request failed (%d)",
+// 			       hdev->name, ret);
+// 			return NULL;
+// 		}
+// 
+// 		BT_ERR("%s failed to open Intel firmware file: %s(%d)",
+// 		       hdev->name, fwname, ret);
+// 
+// 		/* If the correct firmware patch file is not found, use the
+// 		 * default firmware patch file instead
+// 		 */
+// 		snprintf(fwname, sizeof(fwname), "intel/ibt-hw-%x.%x.bseq",
+// 			 ver->hw_platform, ver->hw_variant);
+// 		if (request_firmware(&fw, fwname, &hdev->dev) < 0) {
+// 			BT_ERR("%s failed to open default Intel fw file: %s",
+// 			       hdev->name, fwname);
+// 			return NULL;
+// 		}
+// 	}
+// 
+// 	BT_INFO("%s: Intel Bluetooth firmware file: %s", hdev->name, fwname);
+// 
+// 	return fw;
+// }
+// 
+// static int btusb_setup_intel_patching(struct hci_dev *hdev,
+// 				      const struct firmware *fw,
+// 				      const u8 **fw_ptr, int *disable_patch)
+// {
+// 	struct sk_buff *skb;
+// 	struct hci_command_hdr *cmd;
+// 	const u8 *cmd_param;
+// 	struct hci_event_hdr *evt = NULL;
+// 	const u8 *evt_param = NULL;
+// 	int remain = fw->size - (*fw_ptr - fw->data);
+// 
+// 	/* The first byte indicates the types of the patch command or event.
+// 	 * 0x01 means HCI command and 0x02 is HCI event. If the first bytes
+// 	 * in the current firmware buffer doesn't start with 0x01 or
+// 	 * the size of remain buffer is smaller than HCI command header,
+// 	 * the firmware file is corrupted and it should stop the patching
+// 	 * process.
+// 	 */
+// 	if (remain > HCI_COMMAND_HDR_SIZE && *fw_ptr[0] != 0x01) {
+// 		BT_ERR("%s Intel fw corrupted: invalid cmd read", hdev->name);
+// 		return -EINVAL;
+// 	}
+// 	(*fw_ptr)++;
+// 	remain--;
+// 
+// 	cmd = (struct hci_command_hdr *)(*fw_ptr);
+// 	*fw_ptr += sizeof(*cmd);
+// 	remain -= sizeof(*cmd);
+// 
+// 	/* Ensure that the remain firmware data is long enough than the length
+// 	 * of command parameter. If not, the firmware file is corrupted.
+// 	 */
+// 	if (remain < cmd->plen) {
+// 		BT_ERR("%s Intel fw corrupted: invalid cmd len", hdev->name);
+// 		return -EFAULT;
+// 	}
+// 
+// 	/* If there is a command that loads a patch in the firmware
+// 	 * file, then enable the patch upon success, otherwise just
+// 	 * disable the manufacturer mode, for example patch activation
+// 	 * is not required when the default firmware patch file is used
+// 	 * because there are no patch data to load.
+// 	 */
+// 	if (*disable_patch && le16_to_cpu(cmd->opcode) == 0xfc8e)
+// 		*disable_patch = 0;
+// 
+// 	cmd_param = *fw_ptr;
+// 	*fw_ptr += cmd->plen;
+// 	remain -= cmd->plen;
+// 
+// 	/* This reads the expected events when the above command is sent to the
+// 	 * device. Some vendor commands expects more than one events, for
+// 	 * example command status event followed by vendor specific event.
+// 	 * For this case, it only keeps the last expected event. so the command
+// 	 * can be sent with __hci_cmd_sync_ev() which returns the sk_buff of
+// 	 * last expected event.
+// 	 */
+// 	while (remain > HCI_EVENT_HDR_SIZE && *fw_ptr[0] == 0x02) {
+// 		(*fw_ptr)++;
+// 		remain--;
+// 
+// 		evt = (struct hci_event_hdr *)(*fw_ptr);
+// 		*fw_ptr += sizeof(*evt);
+// 		remain -= sizeof(*evt);
+// 
+// 		if (remain < evt->plen) {
+// 			BT_ERR("%s Intel fw corrupted: invalid evt len",
+// 			       hdev->name);
+// 			return -EFAULT;
+// 		}
+// 
+// 		evt_param = *fw_ptr;
+// 		*fw_ptr += evt->plen;
+// 		remain -= evt->plen;
+// 	}
+// 
+// 	/* Every HCI commands in the firmware file has its correspond event.
+// 	 * If event is not found or remain is smaller than zero, the firmware
+// 	 * file is corrupted.
+// 	 */
+// 	if (!evt || !evt_param || remain < 0) {
+// 		BT_ERR("%s Intel fw corrupted: invalid evt read", hdev->name);
+// 		return -EFAULT;
+// 	}
+// 
+// 	skb = __hci_cmd_sync_ev(hdev, le16_to_cpu(cmd->opcode), cmd->plen,
+// 				cmd_param, evt->evt, HCI_INIT_TIMEOUT);
+// 	if (IS_ERR(skb)) {
+// 		BT_ERR("%s sending Intel patch command (0x%4.4x) failed (%ld)",
+// 		       hdev->name, cmd->opcode, PTR_ERR(skb));
+// 		return PTR_ERR(skb);
+// 	}
+// 
+// 	/* It ensures that the returned event matches the event data read from
+// 	 * the firmware file. At fist, it checks the length and then
+// 	 * the contents of the event.
+// 	 */
+// 	if (skb->len != evt->plen) {
+// 		BT_ERR("%s mismatch event length (opcode 0x%4.4x)", hdev->name,
+// 		       le16_to_cpu(cmd->opcode));
+// 		kfree_skb(skb);
+// 		return -EFAULT;
+// 	}
+// 
+// 	if (memcmp(skb->data, evt_param, evt->plen)) {
+// 		BT_ERR("%s mismatch event parameter (opcode 0x%4.4x)",
+// 		       hdev->name, le16_to_cpu(cmd->opcode));
+// 		kfree_skb(skb);
+// 		return -EFAULT;
+// 	}
+// 	kfree_skb(skb);
+// 
+// 	return 0;
+// }
 
-	snprintf(fwname, sizeof(fwname),
-		 "intel/ibt-hw-%x.%x.%x-fw-%x.%x.%x.%x.%x.bseq",
-		 ver->hw_platform, ver->hw_variant, ver->hw_revision,
-		 ver->fw_variant,  ver->fw_revision, ver->fw_build_num,
-		 ver->fw_build_ww, ver->fw_build_yy);
-
-	ret = request_firmware(&fw, fwname, &hdev->dev);
-	if (ret < 0) {
-		if (ret == -EINVAL) {
-			BT_ERR("%s Intel firmware file request failed (%d)",
-			       hdev->name, ret);
-			return NULL;
-		}
-
-		BT_ERR("%s failed to open Intel firmware file: %s(%d)",
-		       hdev->name, fwname, ret);
-
-		/* If the correct firmware patch file is not found, use the
-		 * default firmware patch file instead
-		 */
-		snprintf(fwname, sizeof(fwname), "intel/ibt-hw-%x.%x.bseq",
-			 ver->hw_platform, ver->hw_variant);
-		if (request_firmware(&fw, fwname, &hdev->dev) < 0) {
-			BT_ERR("%s failed to open default Intel fw file: %s",
-			       hdev->name, fwname);
-			return NULL;
-		}
-	}
-
-	BT_INFO("%s: Intel Bluetooth firmware file: %s", hdev->name, fwname);
-
-	return fw;
-}
-
-static int btusb_setup_intel_patching(struct hci_dev *hdev,
-				      const struct firmware *fw,
-				      const u8 **fw_ptr, int *disable_patch)
-{
-	struct sk_buff *skb;
-	struct hci_command_hdr *cmd;
-	const u8 *cmd_param;
-	struct hci_event_hdr *evt = NULL;
-	const u8 *evt_param = NULL;
-	int remain = fw->size - (*fw_ptr - fw->data);
-
-	/* The first byte indicates the types of the patch command or event.
-	 * 0x01 means HCI command and 0x02 is HCI event. If the first bytes
-	 * in the current firmware buffer doesn't start with 0x01 or
-	 * the size of remain buffer is smaller than HCI command header,
-	 * the firmware file is corrupted and it should stop the patching
-	 * process.
-	 */
-	if (remain > HCI_COMMAND_HDR_SIZE && *fw_ptr[0] != 0x01) {
-		BT_ERR("%s Intel fw corrupted: invalid cmd read", hdev->name);
-		return -EINVAL;
-	}
-	(*fw_ptr)++;
-	remain--;
-
-	cmd = (struct hci_command_hdr *)(*fw_ptr);
-	*fw_ptr += sizeof(*cmd);
-	remain -= sizeof(*cmd);
-
-	/* Ensure that the remain firmware data is long enough than the length
-	 * of command parameter. If not, the firmware file is corrupted.
-	 */
-	if (remain < cmd->plen) {
-		BT_ERR("%s Intel fw corrupted: invalid cmd len", hdev->name);
-		return -EFAULT;
-	}
-
-	/* If there is a command that loads a patch in the firmware
-	 * file, then enable the patch upon success, otherwise just
-	 * disable the manufacturer mode, for example patch activation
-	 * is not required when the default firmware patch file is used
-	 * because there are no patch data to load.
-	 */
-	if (*disable_patch && le16_to_cpu(cmd->opcode) == 0xfc8e)
-		*disable_patch = 0;
-
-	cmd_param = *fw_ptr;
-	*fw_ptr += cmd->plen;
-	remain -= cmd->plen;
-
-	/* This reads the expected events when the above command is sent to the
-	 * device. Some vendor commands expects more than one events, for
-	 * example command status event followed by vendor specific event.
-	 * For this case, it only keeps the last expected event. so the command
-	 * can be sent with __hci_cmd_sync_ev() which returns the sk_buff of
-	 * last expected event.
-	 */
-	while (remain > HCI_EVENT_HDR_SIZE && *fw_ptr[0] == 0x02) {
-		(*fw_ptr)++;
-		remain--;
-
-		evt = (struct hci_event_hdr *)(*fw_ptr);
-		*fw_ptr += sizeof(*evt);
-		remain -= sizeof(*evt);
-
-		if (remain < evt->plen) {
-			BT_ERR("%s Intel fw corrupted: invalid evt len",
-			       hdev->name);
-			return -EFAULT;
-		}
-
-		evt_param = *fw_ptr;
-		*fw_ptr += evt->plen;
-		remain -= evt->plen;
-	}
-
-	/* Every HCI commands in the firmware file has its correspond event.
-	 * If event is not found or remain is smaller than zero, the firmware
-	 * file is corrupted.
-	 */
-	if (!evt || !evt_param || remain < 0) {
-		BT_ERR("%s Intel fw corrupted: invalid evt read", hdev->name);
-		return -EFAULT;
-	}
-
-	skb = __hci_cmd_sync_ev(hdev, le16_to_cpu(cmd->opcode), cmd->plen,
-				cmd_param, evt->evt, HCI_INIT_TIMEOUT);
-	if (IS_ERR(skb)) {
-		BT_ERR("%s sending Intel patch command (0x%4.4x) failed (%ld)",
-		       hdev->name, cmd->opcode, PTR_ERR(skb));
-		return PTR_ERR(skb);
-	}
-
-	/* It ensures that the returned event matches the event data read from
-	 * the firmware file. At fist, it checks the length and then
-	 * the contents of the event.
-	 */
-	if (skb->len != evt->plen) {
-		BT_ERR("%s mismatch event length (opcode 0x%4.4x)", hdev->name,
-		       le16_to_cpu(cmd->opcode));
-		kfree_skb(skb);
-		return -EFAULT;
-	}
-
-	if (memcmp(skb->data, evt_param, evt->plen)) {
-		BT_ERR("%s mismatch event parameter (opcode 0x%4.4x)",
-		       hdev->name, le16_to_cpu(cmd->opcode));
-		kfree_skb(skb);
-		return -EFAULT;
-	}
-	kfree_skb(skb);
-
-	return 0;
-}
-
-static int btusb_setup_intel(struct hci_dev *hdev)
-{
-	struct sk_buff *skb;
-	const struct firmware *fw;
-	const u8 *fw_ptr;
-	int disable_patch;
-	struct intel_version *ver;
-
-	const u8 mfg_enable[] = { 0x01, 0x00 };
-	const u8 mfg_disable[] = { 0x00, 0x00 };
-	const u8 mfg_reset_deactivate[] = { 0x00, 0x01 };
-	const u8 mfg_reset_activate[] = { 0x00, 0x02 };
-
-	BT_DBG("%s", hdev->name);
-
-	/* The controller has a bug with the first HCI command sent to it
-	 * returning number of completed commands as zero. This would stall the
-	 * command processing in the Bluetooth core.
-	 *
-	 * As a workaround, send HCI Reset command first which will reset the
-	 * number of completed commands and allow normal command processing
-	 * from now on.
-	 */
-	skb = __hci_cmd_sync(hdev, HCI_OP_RESET, 0, NULL, HCI_INIT_TIMEOUT);
-	if (IS_ERR(skb)) {
-		BT_ERR("%s sending initial HCI reset command failed (%ld)",
-		       hdev->name, PTR_ERR(skb));
-		return PTR_ERR(skb);
-	}
-	kfree_skb(skb);
-
-	/* Read Intel specific controller version first to allow selection of
-	 * which firmware file to load.
-	 *
-	 * The returned information are hardware variant and revision plus
-	 * firmware variant, revision and build number.
-	 */
-	skb = __hci_cmd_sync(hdev, 0xfc05, 0, NULL, HCI_INIT_TIMEOUT);
-	if (IS_ERR(skb)) {
-		BT_ERR("%s reading Intel fw version command failed (%ld)",
-		       hdev->name, PTR_ERR(skb));
-		return PTR_ERR(skb);
-	}
-
-	if (skb->len != sizeof(*ver)) {
-		BT_ERR("%s Intel version event length mismatch", hdev->name);
-		kfree_skb(skb);
-		return -EIO;
-	}
-
-	ver = (struct intel_version *)skb->data;
-
-	BT_INFO("%s: read Intel version: %02x%02x%02x%02x%02x%02x%02x%02x%02x",
-		hdev->name, ver->hw_platform, ver->hw_variant,
-		ver->hw_revision, ver->fw_variant,  ver->fw_revision,
-		ver->fw_build_num, ver->fw_build_ww, ver->fw_build_yy,
-		ver->fw_patch_num);
-
-	/* fw_patch_num indicates the version of patch the device currently
-	 * have. If there is no patch data in the device, it is always 0x00.
-	 * So, if it is other than 0x00, no need to patch the device again.
-	 */
-	if (ver->fw_patch_num) {
-		BT_INFO("%s: Intel device is already patched. patch num: %02x",
-			hdev->name, ver->fw_patch_num);
-		kfree_skb(skb);
-		btintel_check_bdaddr(hdev);
-		return 0;
-	}
-
-	/* Opens the firmware patch file based on the firmware version read
-	 * from the controller. If it fails to open the matching firmware
-	 * patch file, it tries to open the default firmware patch file.
-	 * If no patch file is found, allow the device to operate without
-	 * a patch.
-	 */
-	fw = btusb_setup_intel_get_fw(hdev, ver);
-	if (!fw) {
-		kfree_skb(skb);
-		btintel_check_bdaddr(hdev);
-		return 0;
-	}
-	fw_ptr = fw->data;
-
-	kfree_skb(skb);
-
-	/* This Intel specific command enables the manufacturer mode of the
-	 * controller.
-	 *
-	 * Only while this mode is enabled, the driver can download the
-	 * firmware patch data and configuration parameters.
-	 */
-	skb = __hci_cmd_sync(hdev, 0xfc11, 2, mfg_enable, HCI_INIT_TIMEOUT);
-	if (IS_ERR(skb)) {
-		BT_ERR("%s entering Intel manufacturer mode failed (%ld)",
-		       hdev->name, PTR_ERR(skb));
-		release_firmware(fw);
-		return PTR_ERR(skb);
-	}
-
-	kfree_skb(skb);
-
-	disable_patch = 1;
-
-	/* The firmware data file consists of list of Intel specific HCI
-	 * commands and its expected events. The first byte indicates the
-	 * type of the message, either HCI command or HCI event.
-	 *
-	 * It reads the command and its expected event from the firmware file,
-	 * and send to the controller. Once __hci_cmd_sync_ev() returns,
-	 * the returned event is compared with the event read from the firmware
-	 * file and it will continue until all the messages are downloaded to
-	 * the controller.
-	 *
-	 * Once the firmware patching is completed successfully,
-	 * the manufacturer mode is disabled with reset and activating the
-	 * downloaded patch.
-	 *
-	 * If the firmware patching fails, the manufacturer mode is
-	 * disabled with reset and deactivating the patch.
-	 *
-	 * If the default patch file is used, no reset is done when disabling
-	 * the manufacturer.
-	 */
-	while (fw->size > fw_ptr - fw->data) {
-		int ret;
-
-		ret = btusb_setup_intel_patching(hdev, fw, &fw_ptr,
-						 &disable_patch);
-		if (ret < 0)
-			goto exit_mfg_deactivate;
-	}
-
-	release_firmware(fw);
-
-	if (disable_patch)
-		goto exit_mfg_disable;
-
-	/* Patching completed successfully and disable the manufacturer mode
-	 * with reset and activate the downloaded firmware patches.
-	 */
-	skb = __hci_cmd_sync(hdev, 0xfc11, sizeof(mfg_reset_activate),
-			     mfg_reset_activate, HCI_INIT_TIMEOUT);
-	if (IS_ERR(skb)) {
-		BT_ERR("%s exiting Intel manufacturer mode failed (%ld)",
-		       hdev->name, PTR_ERR(skb));
-		return PTR_ERR(skb);
-	}
-	kfree_skb(skb);
-
-	BT_INFO("%s: Intel Bluetooth firmware patch completed and activated",
-		hdev->name);
-
-	btintel_check_bdaddr(hdev);
-	return 0;
-
-exit_mfg_disable:
-	/* Disable the manufacturer mode without reset */
-	skb = __hci_cmd_sync(hdev, 0xfc11, sizeof(mfg_disable), mfg_disable,
-			     HCI_INIT_TIMEOUT);
-	if (IS_ERR(skb)) {
-		BT_ERR("%s exiting Intel manufacturer mode failed (%ld)",
-		       hdev->name, PTR_ERR(skb));
-		return PTR_ERR(skb);
-	}
-	kfree_skb(skb);
-
-	BT_INFO("%s: Intel Bluetooth firmware patch completed", hdev->name);
-
-	btintel_check_bdaddr(hdev);
-	return 0;
-
-exit_mfg_deactivate:
-	release_firmware(fw);
-
-	/* Patching failed. Disable the manufacturer mode with reset and
-	 * deactivate the downloaded firmware patches.
-	 */
-	skb = __hci_cmd_sync(hdev, 0xfc11, sizeof(mfg_reset_deactivate),
-			     mfg_reset_deactivate, HCI_INIT_TIMEOUT);
-	if (IS_ERR(skb)) {
-		BT_ERR("%s exiting Intel manufacturer mode failed (%ld)",
-		       hdev->name, PTR_ERR(skb));
-		return PTR_ERR(skb);
-	}
-	kfree_skb(skb);
-
-	BT_INFO("%s: Intel Bluetooth firmware patch completed and deactivated",
-		hdev->name);
-
-	btintel_check_bdaddr(hdev);
-	return 0;
-}
+// static int btusb_setup_intel(struct hci_dev *hdev)
+// {
+// 	struct sk_buff *skb;
+// 	const struct firmware *fw;
+// 	const u8 *fw_ptr;
+// 	int disable_patch;
+// 	struct intel_version *ver;
+// 
+// 	const u8 mfg_enable[] = { 0x01, 0x00 };
+// 	const u8 mfg_disable[] = { 0x00, 0x00 };
+// 	const u8 mfg_reset_deactivate[] = { 0x00, 0x01 };
+// 	const u8 mfg_reset_activate[] = { 0x00, 0x02 };
+// 
+// 	BT_DBG("%s", hdev->name);
+// 
+// 	/* The controller has a bug with the first HCI command sent to it
+// 	 * returning number of completed commands as zero. This would stall the
+// 	 * command processing in the Bluetooth core.
+// 	 *
+// 	 * As a workaround, send HCI Reset command first which will reset the
+// 	 * number of completed commands and allow normal command processing
+// 	 * from now on.
+// 	 */
+// 	skb = __hci_cmd_sync(hdev, HCI_OP_RESET, 0, NULL, HCI_INIT_TIMEOUT);
+// 	if (IS_ERR(skb)) {
+// 		BT_ERR("%s sending initial HCI reset command failed (%ld)",
+// 		       hdev->name, PTR_ERR(skb));
+// 		return PTR_ERR(skb);
+// 	}
+// 	kfree_skb(skb);
+// 
+// 	/* Read Intel specific controller version first to allow selection of
+// 	 * which firmware file to load.
+// 	 *
+// 	 * The returned information are hardware variant and revision plus
+// 	 * firmware variant, revision and build number.
+// 	 */
+// 	skb = __hci_cmd_sync(hdev, 0xfc05, 0, NULL, HCI_INIT_TIMEOUT);
+// 	if (IS_ERR(skb)) {
+// 		BT_ERR("%s reading Intel fw version command failed (%ld)",
+// 		       hdev->name, PTR_ERR(skb));
+// 		return PTR_ERR(skb);
+// 	}
+// 
+// 	if (skb->len != sizeof(*ver)) {
+// 		BT_ERR("%s Intel version event length mismatch", hdev->name);
+// 		kfree_skb(skb);
+// 		return -EIO;
+// 	}
+// 
+// 	ver = (struct intel_version *)skb->data;
+// 
+// 	BT_INFO("%s: read Intel version: %02x%02x%02x%02x%02x%02x%02x%02x%02x",
+// 		hdev->name, ver->hw_platform, ver->hw_variant,
+// 		ver->hw_revision, ver->fw_variant,  ver->fw_revision,
+// 		ver->fw_build_num, ver->fw_build_ww, ver->fw_build_yy,
+// 		ver->fw_patch_num);
+// 
+// 	/* fw_patch_num indicates the version of patch the device currently
+// 	 * have. If there is no patch data in the device, it is always 0x00.
+// 	 * So, if it is other than 0x00, no need to patch the device again.
+// 	 */
+// 	if (ver->fw_patch_num) {
+// 		BT_INFO("%s: Intel device is already patched. patch num: %02x",
+// 			hdev->name, ver->fw_patch_num);
+// 		kfree_skb(skb);
+// 		btintel_check_bdaddr(hdev);
+// 		return 0;
+// 	}
+// 
+// 	/* Opens the firmware patch file based on the firmware version read
+// 	 * from the controller. If it fails to open the matching firmware
+// 	 * patch file, it tries to open the default firmware patch file.
+// 	 * If no patch file is found, allow the device to operate without
+// 	 * a patch.
+// 	 */
+// 	fw = btusb_setup_intel_get_fw(hdev, ver);
+// 	if (!fw) {
+// 		kfree_skb(skb);
+// 		btintel_check_bdaddr(hdev);
+// 		return 0;
+// 	}
+// 	fw_ptr = fw->data;
+// 
+// 	kfree_skb(skb);
+// 
+// 	/* This Intel specific command enables the manufacturer mode of the
+// 	 * controller.
+// 	 *
+// 	 * Only while this mode is enabled, the driver can download the
+// 	 * firmware patch data and configuration parameters.
+// 	 */
+// 	skb = __hci_cmd_sync(hdev, 0xfc11, 2, mfg_enable, HCI_INIT_TIMEOUT);
+// 	if (IS_ERR(skb)) {
+// 		BT_ERR("%s entering Intel manufacturer mode failed (%ld)",
+// 		       hdev->name, PTR_ERR(skb));
+// 		release_firmware(fw);
+// 		return PTR_ERR(skb);
+// 	}
+// 
+// 	kfree_skb(skb);
+// 
+// 	disable_patch = 1;
+// 
+// 	/* The firmware data file consists of list of Intel specific HCI
+// 	 * commands and its expected events. The first byte indicates the
+// 	 * type of the message, either HCI command or HCI event.
+// 	 *
+// 	 * It reads the command and its expected event from the firmware file,
+// 	 * and send to the controller. Once __hci_cmd_sync_ev() returns,
+// 	 * the returned event is compared with the event read from the firmware
+// 	 * file and it will continue until all the messages are downloaded to
+// 	 * the controller.
+// 	 *
+// 	 * Once the firmware patching is completed successfully,
+// 	 * the manufacturer mode is disabled with reset and activating the
+// 	 * downloaded patch.
+// 	 *
+// 	 * If the firmware patching fails, the manufacturer mode is
+// 	 * disabled with reset and deactivating the patch.
+// 	 *
+// 	 * If the default patch file is used, no reset is done when disabling
+// 	 * the manufacturer.
+// 	 */
+// 	while (fw->size > fw_ptr - fw->data) {
+// 		int ret;
+// 
+// 		ret = btusb_setup_intel_patching(hdev, fw, &fw_ptr,
+// 						 &disable_patch);
+// 		if (ret < 0)
+// 			goto exit_mfg_deactivate;
+// 	}
+// 
+// 	release_firmware(fw);
+// 
+// 	if (disable_patch)
+// 		goto exit_mfg_disable;
+// 
+// 	/* Patching completed successfully and disable the manufacturer mode
+// 	 * with reset and activate the downloaded firmware patches.
+// 	 */
+// 	skb = __hci_cmd_sync(hdev, 0xfc11, sizeof(mfg_reset_activate),
+// 			     mfg_reset_activate, HCI_INIT_TIMEOUT);
+// 	if (IS_ERR(skb)) {
+// 		BT_ERR("%s exiting Intel manufacturer mode failed (%ld)",
+// 		       hdev->name, PTR_ERR(skb));
+// 		return PTR_ERR(skb);
+// 	}
+// 	kfree_skb(skb);
+// 
+// 	BT_INFO("%s: Intel Bluetooth firmware patch completed and activated",
+// 		hdev->name);
+// 
+// 	btintel_check_bdaddr(hdev);
+// 	return 0;
+// 
+// exit_mfg_disable:
+// 	/* Disable the manufacturer mode without reset */
+// 	skb = __hci_cmd_sync(hdev, 0xfc11, sizeof(mfg_disable), mfg_disable,
+// 			     HCI_INIT_TIMEOUT);
+// 	if (IS_ERR(skb)) {
+// 		BT_ERR("%s exiting Intel manufacturer mode failed (%ld)",
+// 		       hdev->name, PTR_ERR(skb));
+// 		return PTR_ERR(skb);
+// 	}
+// 	kfree_skb(skb);
+// 
+// 	BT_INFO("%s: Intel Bluetooth firmware patch completed", hdev->name);
+// 
+// 	btintel_check_bdaddr(hdev);
+// 	return 0;
+// 
+// exit_mfg_deactivate:
+// 	release_firmware(fw);
+// 
+// 	/* Patching failed. Disable the manufacturer mode with reset and
+// 	 * deactivate the downloaded firmware patches.
+// 	 */
+// 	skb = __hci_cmd_sync(hdev, 0xfc11, sizeof(mfg_reset_deactivate),
+// 			     mfg_reset_deactivate, HCI_INIT_TIMEOUT);
+// 	if (IS_ERR(skb)) {
+// 		BT_ERR("%s exiting Intel manufacturer mode failed (%ld)",
+// 		       hdev->name, PTR_ERR(skb));
+// 		return PTR_ERR(skb);
+// 	}
+// 	kfree_skb(skb);
+// 
+// 	BT_INFO("%s: Intel Bluetooth firmware patch completed and deactivated",
+// 		hdev->name);
+// 
+// 	btintel_check_bdaddr(hdev);
+// 	return 0;
+// }
 
 static int inject_cmd_complete(struct hci_dev *hdev, __u16 opcode)
 {
@@ -1751,537 +1751,537 @@ static int inject_cmd_complete(struct hci_dev *hdev, __u16 opcode)
 	return hci_recv_frame(hdev, skb);
 }
 
-static int btusb_recv_bulk_intel(struct btusb_data *data, void *buffer,
-				 int count)
-{
-	/* When the device is in bootloader mode, then it can send
-	 * events via the bulk endpoint. These events are treated the
-	 * same way as the ones received from the interrupt endpoint.
-	 */
-	if (test_bit(BTUSB_BOOTLOADER, &data->flags))
-		return btusb_recv_intr(data, buffer, count);
-
-	return btusb_recv_bulk(data, buffer, count);
-}
-
-static void btusb_intel_bootup(struct btusb_data *data, const void *ptr,
-			       unsigned int len)
-{
-	const struct intel_bootup *evt = ptr;
-
-	if (len != sizeof(*evt))
-		return;
-
-	if (test_and_clear_bit(BTUSB_BOOTING, &data->flags)) {
-		smp_mb__after_atomic();
-		wake_up_bit(&data->flags, BTUSB_BOOTING);
-	}
-}
-
-static void btusb_intel_secure_send_result(struct btusb_data *data,
-					   const void *ptr, unsigned int len)
-{
-	const struct intel_secure_send_result *evt = ptr;
-
-	if (len != sizeof(*evt))
-		return;
-
-	if (evt->result)
-		set_bit(BTUSB_FIRMWARE_FAILED, &data->flags);
-
-	if (test_and_clear_bit(BTUSB_DOWNLOADING, &data->flags) &&
-	    test_bit(BTUSB_FIRMWARE_LOADED, &data->flags)) {
-		smp_mb__after_atomic();
-		wake_up_bit(&data->flags, BTUSB_DOWNLOADING);
-	}
-}
-
-static int btusb_recv_event_intel(struct hci_dev *hdev, struct sk_buff *skb)
-{
-	struct btusb_data *data = hci_get_drvdata(hdev);
-
-	if (test_bit(BTUSB_BOOTLOADER, &data->flags)) {
-		struct hci_event_hdr *hdr = (void *)skb->data;
-
-		if (skb->len > HCI_EVENT_HDR_SIZE && hdr->evt == 0xff &&
-		    hdr->plen > 0) {
-			const void *ptr = skb->data + HCI_EVENT_HDR_SIZE + 1;
-			unsigned int len = skb->len - HCI_EVENT_HDR_SIZE - 1;
-
-			switch (skb->data[2]) {
-			case 0x02:
-				/* When switching to the operational firmware
-				 * the device sends a vendor specific event
-				 * indicating that the bootup completed.
-				 */
-				btusb_intel_bootup(data, ptr, len);
-				break;
-			case 0x06:
-				/* When the firmware loading completes the
-				 * device sends out a vendor specific event
-				 * indicating the result of the firmware
-				 * loading.
-				 */
-				btusb_intel_secure_send_result(data, ptr, len);
-				break;
-			}
-		}
-	}
-
-	return hci_recv_frame(hdev, skb);
-}
-
-static int btusb_send_frame_intel(struct hci_dev *hdev, struct sk_buff *skb)
-{
-	struct btusb_data *data = hci_get_drvdata(hdev);
-	struct urb *urb;
-
-	BT_DBG("%s", hdev->name);
-
-	if (!test_bit(HCI_RUNNING, &hdev->flags))
-		return -EBUSY;
-
-	switch (bt_cb(skb)->pkt_type) {
-	case HCI_COMMAND_PKT:
-		if (test_bit(BTUSB_BOOTLOADER, &data->flags)) {
-			struct hci_command_hdr *cmd = (void *)skb->data;
-			__u16 opcode = le16_to_cpu(cmd->opcode);
-
-			/* When in bootloader mode and the command 0xfc09
-			 * is received, it needs to be send down the
-			 * bulk endpoint. So allocate a bulk URB instead.
-			 */
-			if (opcode == 0xfc09)
-				urb = alloc_bulk_urb(hdev, skb);
-			else
-				urb = alloc_ctrl_urb(hdev, skb);
-
-			/* When the 0xfc01 command is issued to boot into
-			 * the operational firmware, it will actually not
-			 * send a command complete event. To keep the flow
-			 * control working inject that event here.
-			 */
-			if (opcode == 0xfc01)
-				inject_cmd_complete(hdev, opcode);
-		} else {
-			urb = alloc_ctrl_urb(hdev, skb);
-		}
-		if (IS_ERR(urb))
-			return PTR_ERR(urb);
-
-		hdev->stat.cmd_tx++;
-		return submit_or_queue_tx_urb(hdev, urb);
-
-	case HCI_ACLDATA_PKT:
-		urb = alloc_bulk_urb(hdev, skb);
-		if (IS_ERR(urb))
-			return PTR_ERR(urb);
-
-		hdev->stat.acl_tx++;
-		return submit_or_queue_tx_urb(hdev, urb);
-
-	case HCI_SCODATA_PKT:
-		if (hci_conn_num(hdev, SCO_LINK) < 1)
-			return -ENODEV;
-
-		urb = alloc_isoc_urb(hdev, skb);
-		if (IS_ERR(urb))
-			return PTR_ERR(urb);
-
-		hdev->stat.sco_tx++;
-		return submit_tx_urb(hdev, urb);
-	}
-
-	return -EILSEQ;
-}
-
-static int btusb_setup_intel_new(struct hci_dev *hdev)
-{
-	static const u8 reset_param[] = { 0x00, 0x01, 0x00, 0x01,
-					  0x00, 0x08, 0x04, 0x00 };
-	struct btusb_data *data = hci_get_drvdata(hdev);
-	struct sk_buff *skb;
-	struct intel_version *ver;
-	struct intel_boot_params *params;
-	const struct firmware *fw;
-	const u8 *fw_ptr;
-	u32 frag_len;
-	char fwname[64];
-	ktime_t calltime, delta, rettime;
-	unsigned long long duration;
-	int err;
-
-	BT_DBG("%s", hdev->name);
-
-	calltime = ktime_get();
-
-	/* Read the Intel version information to determine if the device
-	 * is in bootloader mode or if it already has operational firmware
-	 * loaded.
-	 */
-	skb = __hci_cmd_sync(hdev, 0xfc05, 0, NULL, HCI_INIT_TIMEOUT);
-	if (IS_ERR(skb)) {
-		BT_ERR("%s: Reading Intel version information failed (%ld)",
-		       hdev->name, PTR_ERR(skb));
-		return PTR_ERR(skb);
-	}
-
-	if (skb->len != sizeof(*ver)) {
-		BT_ERR("%s: Intel version event size mismatch", hdev->name);
-		kfree_skb(skb);
-		return -EILSEQ;
-	}
-
-	ver = (struct intel_version *)skb->data;
-
-	/* The hardware platform number has a fixed value of 0x37 and
-	 * for now only accept this single value.
-	 */
-	if (ver->hw_platform != 0x37) {
-		BT_ERR("%s: Unsupported Intel hardware platform (%u)",
-		       hdev->name, ver->hw_platform);
-		kfree_skb(skb);
-		return -EINVAL;
-	}
-
-	/* At the moment only the hardware variant iBT 3.0 (LnP/SfP) is
-	 * supported by this firmware loading method. This check has been
-	 * put in place to ensure correct forward compatibility options
-	 * when newer hardware variants come along.
-	 */
-	if (ver->hw_variant != 0x0b) {
-		BT_ERR("%s: Unsupported Intel hardware variant (%u)",
-		       hdev->name, ver->hw_variant);
-		kfree_skb(skb);
-		return -EINVAL;
-	}
-
-	btintel_version_info(hdev, ver);
-
-	/* The firmware variant determines if the device is in bootloader
-	 * mode or is running operational firmware. The value 0x06 identifies
-	 * the bootloader and the value 0x23 identifies the operational
-	 * firmware.
-	 *
-	 * When the operational firmware is already present, then only
-	 * the check for valid Bluetooth device address is needed. This
-	 * determines if the device will be added as configured or
-	 * unconfigured controller.
-	 *
-	 * It is not possible to use the Secure Boot Parameters in this
-	 * case since that command is only available in bootloader mode.
-	 */
-	if (ver->fw_variant == 0x23) {
-		kfree_skb(skb);
-		clear_bit(BTUSB_BOOTLOADER, &data->flags);
-		btintel_check_bdaddr(hdev);
-		return 0;
-	}
-
-	/* If the device is not in bootloader mode, then the only possible
-	 * choice is to return an error and abort the device initialization.
-	 */
-	if (ver->fw_variant != 0x06) {
-		BT_ERR("%s: Unsupported Intel firmware variant (%u)",
-		       hdev->name, ver->fw_variant);
-		kfree_skb(skb);
-		return -ENODEV;
-	}
-
-	kfree_skb(skb);
-
-	/* Read the secure boot parameters to identify the operating
-	 * details of the bootloader.
-	 */
-	skb = __hci_cmd_sync(hdev, 0xfc0d, 0, NULL, HCI_INIT_TIMEOUT);
-	if (IS_ERR(skb)) {
-		BT_ERR("%s: Reading Intel boot parameters failed (%ld)",
-		       hdev->name, PTR_ERR(skb));
-		return PTR_ERR(skb);
-	}
-
-	if (skb->len != sizeof(*params)) {
-		BT_ERR("%s: Intel boot parameters size mismatch", hdev->name);
-		kfree_skb(skb);
-		return -EILSEQ;
-	}
-
-	params = (struct intel_boot_params *)skb->data;
-
-	BT_INFO("%s: Device revision is %u", hdev->name,
-		le16_to_cpu(params->dev_revid));
-
-	BT_INFO("%s: Secure boot is %s", hdev->name,
-		params->secure_boot ? "enabled" : "disabled");
-
-	BT_INFO("%s: Minimum firmware build %u week %u %u", hdev->name,
-		params->min_fw_build_nn, params->min_fw_build_cw,
-		2000 + params->min_fw_build_yy);
-
-	/* It is required that every single firmware fragment is acknowledged
-	 * with a command complete event. If the boot parameters indicate
-	 * that this bootloader does not send them, then abort the setup.
-	 */
-	if (params->limited_cce != 0x00) {
-		BT_ERR("%s: Unsupported Intel firmware loading method (%u)",
-		       hdev->name, params->limited_cce);
-		kfree_skb(skb);
-		return -EINVAL;
-	}
-
-	/* If the OTP has no valid Bluetooth device address, then there will
-	 * also be no valid address for the operational firmware.
-	 */
-	if (!bacmp(&params->otp_bdaddr, BDADDR_ANY)) {
-		BT_INFO("%s: No device address configured", hdev->name);
-		set_bit(HCI_QUIRK_INVALID_BDADDR, &hdev->quirks);
-	}
-
-	/* With this Intel bootloader only the hardware variant and device
-	 * revision information are used to select the right firmware.
-	 *
-	 * Currently this bootloader support is limited to hardware variant
-	 * iBT 3.0 (LnP/SfP) which is identified by the value 11 (0x0b).
-	 */
-	snprintf(fwname, sizeof(fwname), "intel/ibt-11-%u.sfi",
-		 le16_to_cpu(params->dev_revid));
-
-	err = request_firmware(&fw, fwname, &hdev->dev);
-	if (err < 0) {
-		BT_ERR("%s: Failed to load Intel firmware file (%d)",
-		       hdev->name, err);
-		kfree_skb(skb);
-		return err;
-	}
-
-	BT_INFO("%s: Found device firmware: %s", hdev->name, fwname);
-
-	/* Save the DDC file name for later use to apply once the firmware
-	 * downloading is done.
-	 */
-	snprintf(fwname, sizeof(fwname), "intel/ibt-11-%u.ddc",
-		 le16_to_cpu(params->dev_revid));
-
-	kfree_skb(skb);
-
-	if (fw->size < 644) {
-		BT_ERR("%s: Invalid size of firmware file (%zu)",
-		       hdev->name, fw->size);
-		err = -EBADF;
-		goto done;
-	}
-
-	set_bit(BTUSB_DOWNLOADING, &data->flags);
-
-	/* Start the firmware download transaction with the Init fragment
-	 * represented by the 128 bytes of CSS header.
-	 */
-	err = btintel_secure_send(hdev, 0x00, 128, fw->data);
-	if (err < 0) {
-		BT_ERR("%s: Failed to send firmware header (%d)",
-		       hdev->name, err);
-		goto done;
-	}
-
-	/* Send the 256 bytes of public key information from the firmware
-	 * as the PKey fragment.
-	 */
-	err = btintel_secure_send(hdev, 0x03, 256, fw->data + 128);
-	if (err < 0) {
-		BT_ERR("%s: Failed to send firmware public key (%d)",
-		       hdev->name, err);
-		goto done;
-	}
-
-	/* Send the 256 bytes of signature information from the firmware
-	 * as the Sign fragment.
-	 */
-	err = btintel_secure_send(hdev, 0x02, 256, fw->data + 388);
-	if (err < 0) {
-		BT_ERR("%s: Failed to send firmware signature (%d)",
-		       hdev->name, err);
-		goto done;
-	}
-
-	fw_ptr = fw->data + 644;
-	frag_len = 0;
-
-	while (fw_ptr - fw->data < fw->size) {
-		struct hci_command_hdr *cmd = (void *)(fw_ptr + frag_len);
-
-		frag_len += sizeof(*cmd) + cmd->plen;
-
-		/* The parameter length of the secure send command requires
-		 * a 4 byte alignment. It happens so that the firmware file
-		 * contains proper Intel_NOP commands to align the fragments
-		 * as needed.
-		 *
-		 * Send set of commands with 4 byte alignment from the
-		 * firmware data buffer as a single Data fragement.
-		 */
-		if (!(frag_len % 4)) {
-			err = btintel_secure_send(hdev, 0x01, frag_len, fw_ptr);
-			if (err < 0) {
-				BT_ERR("%s: Failed to send firmware data (%d)",
-				       hdev->name, err);
-				goto done;
-			}
-
-			fw_ptr += frag_len;
-			frag_len = 0;
-		}
-	}
-
-	set_bit(BTUSB_FIRMWARE_LOADED, &data->flags);
-
-	BT_INFO("%s: Waiting for firmware download to complete", hdev->name);
-
-	/* Before switching the device into operational mode and with that
-	 * booting the loaded firmware, wait for the bootloader notification
-	 * that all fragments have been successfully received.
-	 *
-	 * When the event processing receives the notification, then the
-	 * BTUSB_DOWNLOADING flag will be cleared.
-	 *
-	 * The firmware loading should not take longer than 5 seconds
-	 * and thus just timeout if that happens and fail the setup
-	 * of this device.
-	 */
-	err = wait_on_bit_timeout(&data->flags, BTUSB_DOWNLOADING,
-				  TASK_INTERRUPTIBLE,
-				  msecs_to_jiffies(5000));
-	if (err == 1) {
-		BT_ERR("%s: Firmware loading interrupted", hdev->name);
-		err = -EINTR;
-		goto done;
-	}
-
-	if (err) {
-		BT_ERR("%s: Firmware loading timeout", hdev->name);
-		err = -ETIMEDOUT;
-		goto done;
-	}
-
-	if (test_bit(BTUSB_FIRMWARE_FAILED, &data->flags)) {
-		BT_ERR("%s: Firmware loading failed", hdev->name);
-		err = -ENOEXEC;
-		goto done;
-	}
-
-	rettime = ktime_get();
-	delta = ktime_sub(rettime, calltime);
-	duration = (unsigned long long) ktime_to_ns(delta) >> 10;
-
-	BT_INFO("%s: Firmware loaded in %llu usecs", hdev->name, duration);
-
-done:
-	release_firmware(fw);
-
-	if (err < 0)
-		return err;
-
-	calltime = ktime_get();
-
-	set_bit(BTUSB_BOOTING, &data->flags);
-
-	skb = __hci_cmd_sync(hdev, 0xfc01, sizeof(reset_param), reset_param,
-			     HCI_INIT_TIMEOUT);
-	if (IS_ERR(skb))
-		return PTR_ERR(skb);
-
-	kfree_skb(skb);
-
-	/* The bootloader will not indicate when the device is ready. This
-	 * is done by the operational firmware sending bootup notification.
-	 *
-	 * Booting into operational firmware should not take longer than
-	 * 1 second. However if that happens, then just fail the setup
-	 * since something went wrong.
-	 */
-	BT_INFO("%s: Waiting for device to boot", hdev->name);
-
-	err = wait_on_bit_timeout(&data->flags, BTUSB_BOOTING,
-				  TASK_INTERRUPTIBLE,
-				  msecs_to_jiffies(1000));
-
-	if (err == 1) {
-		BT_ERR("%s: Device boot interrupted", hdev->name);
-		return -EINTR;
-	}
-
-	if (err) {
-		BT_ERR("%s: Device boot timeout", hdev->name);
-		return -ETIMEDOUT;
-	}
-
-	rettime = ktime_get();
-	delta = ktime_sub(rettime, calltime);
-	duration = (unsigned long long) ktime_to_ns(delta) >> 10;
-
-	BT_INFO("%s: Device booted in %llu usecs", hdev->name, duration);
-
-	clear_bit(BTUSB_BOOTLOADER, &data->flags);
-
-	/* Once the device is running in operational mode, it needs to apply
-	 * the device configuration (DDC) parameters.
-	 *
-	 * The device can work without DDC parameters, so even if it fails
-	 * to load the file, no need to fail the setup.
-	 */
-	err = request_firmware_direct(&fw, fwname, &hdev->dev);
-	if (err < 0)
-		return 0;
-
-	BT_INFO("%s: Found Intel DDC parameters: %s", hdev->name, fwname);
-
-	fw_ptr = fw->data;
-
-	/* DDC file contains one or more DDC structure which has
-	 * Length (1 byte), DDC ID (2 bytes), and DDC value (Length - 2).
-	 */
-	while (fw->size > fw_ptr - fw->data) {
-		u8 cmd_plen = fw_ptr[0] + sizeof(u8);
-
-		skb = __hci_cmd_sync(hdev, 0xfc8b, cmd_plen, fw_ptr,
-				     HCI_INIT_TIMEOUT);
-		if (IS_ERR(skb)) {
-			BT_ERR("%s: Failed to send Intel_Write_DDC (%ld)",
-			       hdev->name, PTR_ERR(skb));
-			release_firmware(fw);
-			return PTR_ERR(skb);
-		}
-
-		fw_ptr += cmd_plen;
-		kfree_skb(skb);
-	}
-
-	release_firmware(fw);
-
-	BT_INFO("%s: Applying Intel DDC parameters completed", hdev->name);
-
-	return 0;
-}
-
-static int btusb_shutdown_intel(struct hci_dev *hdev)
-{
-	struct sk_buff *skb;
-	long ret;
-
-	/* Some platforms have an issue with BT LED when the interface is
-	 * down or BT radio is turned off, which takes 5 seconds to BT LED
-	 * goes off. This command turns off the BT LED immediately.
-	 */
-	skb = __hci_cmd_sync(hdev, 0xfc3f, 0, NULL, HCI_INIT_TIMEOUT);
-	if (IS_ERR(skb)) {
-		ret = PTR_ERR(skb);
-		BT_ERR("%s: turning off Intel device LED failed (%ld)",
-		       hdev->name, ret);
-		return ret;
-	}
-	kfree_skb(skb);
-
-	return 0;
-}
+// static int btusb_recv_bulk_intel(struct btusb_data *data, void *buffer,
+// 				 int count)
+// {
+// 	/* When the device is in bootloader mode, then it can send
+// 	 * events via the bulk endpoint. These events are treated the
+// 	 * same way as the ones received from the interrupt endpoint.
+// 	 */
+// 	if (test_bit(BTUSB_BOOTLOADER, &data->flags))
+// 		return btusb_recv_intr(data, buffer, count);
+// 
+// 	return btusb_recv_bulk(data, buffer, count);
+// }
+// 
+// static void btusb_intel_bootup(struct btusb_data *data, const void *ptr,
+// 			       unsigned int len)
+// {
+// 	const struct intel_bootup *evt = ptr;
+// 
+// 	if (len != sizeof(*evt))
+// 		return;
+// 
+// 	if (test_and_clear_bit(BTUSB_BOOTING, &data->flags)) {
+// 		smp_mb__after_atomic();
+// 		wake_up_bit(&data->flags, BTUSB_BOOTING);
+// 	}
+// }
+// 
+// static void btusb_intel_secure_send_result(struct btusb_data *data,
+// 					   const void *ptr, unsigned int len)
+// {
+// 	const struct intel_secure_send_result *evt = ptr;
+// 
+// 	if (len != sizeof(*evt))
+// 		return;
+// 
+// 	if (evt->result)
+// 		set_bit(BTUSB_FIRMWARE_FAILED, &data->flags);
+// 
+// 	if (test_and_clear_bit(BTUSB_DOWNLOADING, &data->flags) &&
+// 	    test_bit(BTUSB_FIRMWARE_LOADED, &data->flags)) {
+// 		smp_mb__after_atomic();
+// 		wake_up_bit(&data->flags, BTUSB_DOWNLOADING);
+// 	}
+// }
+// 
+// static int btusb_recv_event_intel(struct hci_dev *hdev, struct sk_buff *skb)
+// {
+// 	struct btusb_data *data = hci_get_drvdata(hdev);
+// 
+// 	if (test_bit(BTUSB_BOOTLOADER, &data->flags)) {
+// 		struct hci_event_hdr *hdr = (void *)skb->data;
+// 
+// 		if (skb->len > HCI_EVENT_HDR_SIZE && hdr->evt == 0xff &&
+// 		    hdr->plen > 0) {
+// 			const void *ptr = skb->data + HCI_EVENT_HDR_SIZE + 1;
+// 			unsigned int len = skb->len - HCI_EVENT_HDR_SIZE - 1;
+// 
+// 			switch (skb->data[2]) {
+// 			case 0x02:
+// 				/* When switching to the operational firmware
+// 				 * the device sends a vendor specific event
+// 				 * indicating that the bootup completed.
+// 				 */
+// 				btusb_intel_bootup(data, ptr, len);
+// 				break;
+// 			case 0x06:
+// 				/* When the firmware loading completes the
+// 				 * device sends out a vendor specific event
+// 				 * indicating the result of the firmware
+// 				 * loading.
+// 				 */
+// 				btusb_intel_secure_send_result(data, ptr, len);
+// 				break;
+// 			}
+// 		}
+// 	}
+// 
+// 	return hci_recv_frame(hdev, skb);
+// }
+// 
+// static int btusb_send_frame_intel(struct hci_dev *hdev, struct sk_buff *skb)
+// {
+// 	struct btusb_data *data = hci_get_drvdata(hdev);
+// 	struct urb *urb;
+// 
+// 	BT_DBG("%s", hdev->name);
+// 
+// 	if (!test_bit(HCI_RUNNING, &hdev->flags))
+// 		return -EBUSY;
+// 
+// 	switch (bt_cb(skb)->pkt_type) {
+// 	case HCI_COMMAND_PKT:
+// 		if (test_bit(BTUSB_BOOTLOADER, &data->flags)) {
+// 			struct hci_command_hdr *cmd = (void *)skb->data;
+// 			__u16 opcode = le16_to_cpu(cmd->opcode);
+// 
+// 			/* When in bootloader mode and the command 0xfc09
+// 			 * is received, it needs to be send down the
+// 			 * bulk endpoint. So allocate a bulk URB instead.
+// 			 */
+// 			if (opcode == 0xfc09)
+// 				urb = alloc_bulk_urb(hdev, skb);
+// 			else
+// 				urb = alloc_ctrl_urb(hdev, skb);
+// 
+// 			/* When the 0xfc01 command is issued to boot into
+// 			 * the operational firmware, it will actually not
+// 			 * send a command complete event. To keep the flow
+// 			 * control working inject that event here.
+// 			 */
+// 			if (opcode == 0xfc01)
+// 				inject_cmd_complete(hdev, opcode);
+// 		} else {
+// 			urb = alloc_ctrl_urb(hdev, skb);
+// 		}
+// 		if (IS_ERR(urb))
+// 			return PTR_ERR(urb);
+// 
+// 		hdev->stat.cmd_tx++;
+// 		return submit_or_queue_tx_urb(hdev, urb);
+// 
+// 	case HCI_ACLDATA_PKT:
+// 		urb = alloc_bulk_urb(hdev, skb);
+// 		if (IS_ERR(urb))
+// 			return PTR_ERR(urb);
+// 
+// 		hdev->stat.acl_tx++;
+// 		return submit_or_queue_tx_urb(hdev, urb);
+// 
+// 	case HCI_SCODATA_PKT:
+// 		if (hci_conn_num(hdev, SCO_LINK) < 1)
+// 			return -ENODEV;
+// 
+// 		urb = alloc_isoc_urb(hdev, skb);
+// 		if (IS_ERR(urb))
+// 			return PTR_ERR(urb);
+// 
+// 		hdev->stat.sco_tx++;
+// 		return submit_tx_urb(hdev, urb);
+// 	}
+// 
+// 	return -EILSEQ;
+// }
+// 
+// static int btusb_setup_intel_new(struct hci_dev *hdev)
+// {
+// 	static const u8 reset_param[] = { 0x00, 0x01, 0x00, 0x01,
+// 					  0x00, 0x08, 0x04, 0x00 };
+// 	struct btusb_data *data = hci_get_drvdata(hdev);
+// 	struct sk_buff *skb;
+// 	struct intel_version *ver;
+// 	struct intel_boot_params *params;
+// 	const struct firmware *fw;
+// 	const u8 *fw_ptr;
+// 	u32 frag_len;
+// 	char fwname[64];
+// 	ktime_t calltime, delta, rettime;
+// 	unsigned long long duration;
+// 	int err;
+// 
+// 	BT_DBG("%s", hdev->name);
+// 
+// 	calltime = ktime_get();
+// 
+// 	/* Read the Intel version information to determine if the device
+// 	 * is in bootloader mode or if it already has operational firmware
+// 	 * loaded.
+// 	 */
+// 	skb = __hci_cmd_sync(hdev, 0xfc05, 0, NULL, HCI_INIT_TIMEOUT);
+// 	if (IS_ERR(skb)) {
+// 		BT_ERR("%s: Reading Intel version information failed (%ld)",
+// 		       hdev->name, PTR_ERR(skb));
+// 		return PTR_ERR(skb);
+// 	}
+// 
+// 	if (skb->len != sizeof(*ver)) {
+// 		BT_ERR("%s: Intel version event size mismatch", hdev->name);
+// 		kfree_skb(skb);
+// 		return -EILSEQ;
+// 	}
+// 
+// 	ver = (struct intel_version *)skb->data;
+// 
+// 	/* The hardware platform number has a fixed value of 0x37 and
+// 	 * for now only accept this single value.
+// 	 */
+// 	if (ver->hw_platform != 0x37) {
+// 		BT_ERR("%s: Unsupported Intel hardware platform (%u)",
+// 		       hdev->name, ver->hw_platform);
+// 		kfree_skb(skb);
+// 		return -EINVAL;
+// 	}
+// 
+// 	/* At the moment only the hardware variant iBT 3.0 (LnP/SfP) is
+// 	 * supported by this firmware loading method. This check has been
+// 	 * put in place to ensure correct forward compatibility options
+// 	 * when newer hardware variants come along.
+// 	 */
+// 	if (ver->hw_variant != 0x0b) {
+// 		BT_ERR("%s: Unsupported Intel hardware variant (%u)",
+// 		       hdev->name, ver->hw_variant);
+// 		kfree_skb(skb);
+// 		return -EINVAL;
+// 	}
+// 
+// 	btintel_version_info(hdev, ver);
+// 
+// 	/* The firmware variant determines if the device is in bootloader
+// 	 * mode or is running operational firmware. The value 0x06 identifies
+// 	 * the bootloader and the value 0x23 identifies the operational
+// 	 * firmware.
+// 	 *
+// 	 * When the operational firmware is already present, then only
+// 	 * the check for valid Bluetooth device address is needed. This
+// 	 * determines if the device will be added as configured or
+// 	 * unconfigured controller.
+// 	 *
+// 	 * It is not possible to use the Secure Boot Parameters in this
+// 	 * case since that command is only available in bootloader mode.
+// 	 */
+// 	if (ver->fw_variant == 0x23) {
+// 		kfree_skb(skb);
+// 		clear_bit(BTUSB_BOOTLOADER, &data->flags);
+// 		btintel_check_bdaddr(hdev);
+// 		return 0;
+// 	}
+// 
+// 	/* If the device is not in bootloader mode, then the only possible
+// 	 * choice is to return an error and abort the device initialization.
+// 	 */
+// 	if (ver->fw_variant != 0x06) {
+// 		BT_ERR("%s: Unsupported Intel firmware variant (%u)",
+// 		       hdev->name, ver->fw_variant);
+// 		kfree_skb(skb);
+// 		return -ENODEV;
+// 	}
+// 
+// 	kfree_skb(skb);
+// 
+// 	/* Read the secure boot parameters to identify the operating
+// 	 * details of the bootloader.
+// 	 */
+// 	skb = __hci_cmd_sync(hdev, 0xfc0d, 0, NULL, HCI_INIT_TIMEOUT);
+// 	if (IS_ERR(skb)) {
+// 		BT_ERR("%s: Reading Intel boot parameters failed (%ld)",
+// 		       hdev->name, PTR_ERR(skb));
+// 		return PTR_ERR(skb);
+// 	}
+// 
+// 	if (skb->len != sizeof(*params)) {
+// 		BT_ERR("%s: Intel boot parameters size mismatch", hdev->name);
+// 		kfree_skb(skb);
+// 		return -EILSEQ;
+// 	}
+// 
+// 	params = (struct intel_boot_params *)skb->data;
+// 
+// 	BT_INFO("%s: Device revision is %u", hdev->name,
+// 		le16_to_cpu(params->dev_revid));
+// 
+// 	BT_INFO("%s: Secure boot is %s", hdev->name,
+// 		params->secure_boot ? "enabled" : "disabled");
+// 
+// 	BT_INFO("%s: Minimum firmware build %u week %u %u", hdev->name,
+// 		params->min_fw_build_nn, params->min_fw_build_cw,
+// 		2000 + params->min_fw_build_yy);
+// 
+// 	/* It is required that every single firmware fragment is acknowledged
+// 	 * with a command complete event. If the boot parameters indicate
+// 	 * that this bootloader does not send them, then abort the setup.
+// 	 */
+// 	if (params->limited_cce != 0x00) {
+// 		BT_ERR("%s: Unsupported Intel firmware loading method (%u)",
+// 		       hdev->name, params->limited_cce);
+// 		kfree_skb(skb);
+// 		return -EINVAL;
+// 	}
+// 
+// 	/* If the OTP has no valid Bluetooth device address, then there will
+// 	 * also be no valid address for the operational firmware.
+// 	 */
+// 	if (!bacmp(&params->otp_bdaddr, BDADDR_ANY)) {
+// 		BT_INFO("%s: No device address configured", hdev->name);
+// 		set_bit(HCI_QUIRK_INVALID_BDADDR, &hdev->quirks);
+// 	}
+// 
+// 	/* With this Intel bootloader only the hardware variant and device
+// 	 * revision information are used to select the right firmware.
+// 	 *
+// 	 * Currently this bootloader support is limited to hardware variant
+// 	 * iBT 3.0 (LnP/SfP) which is identified by the value 11 (0x0b).
+// 	 */
+// 	snprintf(fwname, sizeof(fwname), "intel/ibt-11-%u.sfi",
+// 		 le16_to_cpu(params->dev_revid));
+// 
+// 	err = request_firmware(&fw, fwname, &hdev->dev);
+// 	if (err < 0) {
+// 		BT_ERR("%s: Failed to load Intel firmware file (%d)",
+// 		       hdev->name, err);
+// 		kfree_skb(skb);
+// 		return err;
+// 	}
+// 
+// 	BT_INFO("%s: Found device firmware: %s", hdev->name, fwname);
+// 
+// 	/* Save the DDC file name for later use to apply once the firmware
+// 	 * downloading is done.
+// 	 */
+// 	snprintf(fwname, sizeof(fwname), "intel/ibt-11-%u.ddc",
+// 		 le16_to_cpu(params->dev_revid));
+// 
+// 	kfree_skb(skb);
+// 
+// 	if (fw->size < 644) {
+// 		BT_ERR("%s: Invalid size of firmware file (%zu)",
+// 		       hdev->name, fw->size);
+// 		err = -EBADF;
+// 		goto done;
+// 	}
+// 
+// 	set_bit(BTUSB_DOWNLOADING, &data->flags);
+// 
+// 	/* Start the firmware download transaction with the Init fragment
+// 	 * represented by the 128 bytes of CSS header.
+// 	 */
+// 	err = btintel_secure_send(hdev, 0x00, 128, fw->data);
+// 	if (err < 0) {
+// 		BT_ERR("%s: Failed to send firmware header (%d)",
+// 		       hdev->name, err);
+// 		goto done;
+// 	}
+// 
+// 	/* Send the 256 bytes of public key information from the firmware
+// 	 * as the PKey fragment.
+// 	 */
+// 	err = btintel_secure_send(hdev, 0x03, 256, fw->data + 128);
+// 	if (err < 0) {
+// 		BT_ERR("%s: Failed to send firmware public key (%d)",
+// 		       hdev->name, err);
+// 		goto done;
+// 	}
+// 
+// 	/* Send the 256 bytes of signature information from the firmware
+// 	 * as the Sign fragment.
+// 	 */
+// 	err = btintel_secure_send(hdev, 0x02, 256, fw->data + 388);
+// 	if (err < 0) {
+// 		BT_ERR("%s: Failed to send firmware signature (%d)",
+// 		       hdev->name, err);
+// 		goto done;
+// 	}
+// 
+// 	fw_ptr = fw->data + 644;
+// 	frag_len = 0;
+// 
+// 	while (fw_ptr - fw->data < fw->size) {
+// 		struct hci_command_hdr *cmd = (void *)(fw_ptr + frag_len);
+// 
+// 		frag_len += sizeof(*cmd) + cmd->plen;
+// 
+// 		/* The parameter length of the secure send command requires
+// 		 * a 4 byte alignment. It happens so that the firmware file
+// 		 * contains proper Intel_NOP commands to align the fragments
+// 		 * as needed.
+// 		 *
+// 		 * Send set of commands with 4 byte alignment from the
+// 		 * firmware data buffer as a single Data fragement.
+// 		 */
+// 		if (!(frag_len % 4)) {
+// 			err = btintel_secure_send(hdev, 0x01, frag_len, fw_ptr);
+// 			if (err < 0) {
+// 				BT_ERR("%s: Failed to send firmware data (%d)",
+// 				       hdev->name, err);
+// 				goto done;
+// 			}
+// 
+// 			fw_ptr += frag_len;
+// 			frag_len = 0;
+// 		}
+// 	}
+// 
+// 	set_bit(BTUSB_FIRMWARE_LOADED, &data->flags);
+// 
+// 	BT_INFO("%s: Waiting for firmware download to complete", hdev->name);
+// 
+// 	/* Before switching the device into operational mode and with that
+// 	 * booting the loaded firmware, wait for the bootloader notification
+// 	 * that all fragments have been successfully received.
+// 	 *
+// 	 * When the event processing receives the notification, then the
+// 	 * BTUSB_DOWNLOADING flag will be cleared.
+// 	 *
+// 	 * The firmware loading should not take longer than 5 seconds
+// 	 * and thus just timeout if that happens and fail the setup
+// 	 * of this device.
+// 	 */
+// 	err = wait_on_bit_timeout(&data->flags, BTUSB_DOWNLOADING,
+// 				  TASK_INTERRUPTIBLE,
+// 				  msecs_to_jiffies(5000));
+// 	if (err == 1) {
+// 		BT_ERR("%s: Firmware loading interrupted", hdev->name);
+// 		err = -EINTR;
+// 		goto done;
+// 	}
+// 
+// 	if (err) {
+// 		BT_ERR("%s: Firmware loading timeout", hdev->name);
+// 		err = -ETIMEDOUT;
+// 		goto done;
+// 	}
+// 
+// 	if (test_bit(BTUSB_FIRMWARE_FAILED, &data->flags)) {
+// 		BT_ERR("%s: Firmware loading failed", hdev->name);
+// 		err = -ENOEXEC;
+// 		goto done;
+// 	}
+// 
+// 	rettime = ktime_get();
+// 	delta = ktime_sub(rettime, calltime);
+// 	duration = (unsigned long long) ktime_to_ns(delta) >> 10;
+// 
+// 	BT_INFO("%s: Firmware loaded in %llu usecs", hdev->name, duration);
+// 
+// done:
+// 	release_firmware(fw);
+// 
+// 	if (err < 0)
+// 		return err;
+// 
+// 	calltime = ktime_get();
+// 
+// 	set_bit(BTUSB_BOOTING, &data->flags);
+// 
+// 	skb = __hci_cmd_sync(hdev, 0xfc01, sizeof(reset_param), reset_param,
+// 			     HCI_INIT_TIMEOUT);
+// 	if (IS_ERR(skb))
+// 		return PTR_ERR(skb);
+// 
+// 	kfree_skb(skb);
+// 
+// 	/* The bootloader will not indicate when the device is ready. This
+// 	 * is done by the operational firmware sending bootup notification.
+// 	 *
+// 	 * Booting into operational firmware should not take longer than
+// 	 * 1 second. However if that happens, then just fail the setup
+// 	 * since something went wrong.
+// 	 */
+// 	BT_INFO("%s: Waiting for device to boot", hdev->name);
+// 
+// 	err = wait_on_bit_timeout(&data->flags, BTUSB_BOOTING,
+// 				  TASK_INTERRUPTIBLE,
+// 				  msecs_to_jiffies(1000));
+// 
+// 	if (err == 1) {
+// 		BT_ERR("%s: Device boot interrupted", hdev->name);
+// 		return -EINTR;
+// 	}
+// 
+// 	if (err) {
+// 		BT_ERR("%s: Device boot timeout", hdev->name);
+// 		return -ETIMEDOUT;
+// 	}
+// 
+// 	rettime = ktime_get();
+// 	delta = ktime_sub(rettime, calltime);
+// 	duration = (unsigned long long) ktime_to_ns(delta) >> 10;
+// 
+// 	BT_INFO("%s: Device booted in %llu usecs", hdev->name, duration);
+// 
+// 	clear_bit(BTUSB_BOOTLOADER, &data->flags);
+// 
+// 	/* Once the device is running in operational mode, it needs to apply
+// 	 * the device configuration (DDC) parameters.
+// 	 *
+// 	 * The device can work without DDC parameters, so even if it fails
+// 	 * to load the file, no need to fail the setup.
+// 	 */
+// 	err = request_firmware_direct(&fw, fwname, &hdev->dev);
+// 	if (err < 0)
+// 		return 0;
+// 
+// 	BT_INFO("%s: Found Intel DDC parameters: %s", hdev->name, fwname);
+// 
+// 	fw_ptr = fw->data;
+// 
+// 	/* DDC file contains one or more DDC structure which has
+// 	 * Length (1 byte), DDC ID (2 bytes), and DDC value (Length - 2).
+// 	 */
+// 	while (fw->size > fw_ptr - fw->data) {
+// 		u8 cmd_plen = fw_ptr[0] + sizeof(u8);
+// 
+// 		skb = __hci_cmd_sync(hdev, 0xfc8b, cmd_plen, fw_ptr,
+// 				     HCI_INIT_TIMEOUT);
+// 		if (IS_ERR(skb)) {
+// 			BT_ERR("%s: Failed to send Intel_Write_DDC (%ld)",
+// 			       hdev->name, PTR_ERR(skb));
+// 			release_firmware(fw);
+// 			return PTR_ERR(skb);
+// 		}
+// 
+// 		fw_ptr += cmd_plen;
+// 		kfree_skb(skb);
+// 	}
+// 
+// 	release_firmware(fw);
+// 
+// 	BT_INFO("%s: Applying Intel DDC parameters completed", hdev->name);
+// 
+// 	return 0;
+// }
+// 
+// static int btusb_shutdown_intel(struct hci_dev *hdev)
+// {
+// 	struct sk_buff *skb;
+// 	long ret;
+// 
+// 	/* Some platforms have an issue with BT LED when the interface is
+// 	 * down or BT radio is turned off, which takes 5 seconds to BT LED
+// 	 * goes off. This command turns off the BT LED immediately.
+// 	 */
+// 	skb = __hci_cmd_sync(hdev, 0xfc3f, 0, NULL, HCI_INIT_TIMEOUT);
+// 	if (IS_ERR(skb)) {
+// 		ret = PTR_ERR(skb);
+// 		BT_ERR("%s: turning off Intel device LED failed (%ld)",
+// 		       hdev->name, ret);
+// 		return ret;
+// 	}
+// 	kfree_skb(skb);
+// 
+// 	return 0;
+// }
 
 static int btusb_set_bdaddr_marvell(struct hci_dev *hdev,
 				    const bdaddr_t *bdaddr)
@@ -2667,8 +2667,8 @@ static int btusb_probe(struct usb_interface *intf,
 	spin_lock_init(&data->rxlock);
 
 	if (id->driver_info & BTUSB_INTEL_NEW) {
-		data->recv_event = btusb_recv_event_intel;
-		data->recv_bulk = btusb_recv_bulk_intel;
+//		data->recv_event = btusb_recv_event_intel;
+//		data->recv_bulk = btusb_recv_bulk_intel;
 		set_bit(BTUSB_BOOTLOADER, &data->flags);
 	} else {
 		data->recv_event = hci_recv_frame;
@@ -2710,21 +2710,21 @@ static int btusb_probe(struct usb_interface *intf,
 		hdev->setup = btbcm_setup_apple;
 #endif
 
-	if (id->driver_info & BTUSB_INTEL) {
-		hdev->setup = btusb_setup_intel;
-		hdev->shutdown = btusb_shutdown_intel;
-		hdev->set_bdaddr = btintel_set_bdaddr;
-		set_bit(HCI_QUIRK_STRICT_DUPLICATE_FILTER, &hdev->quirks);
-		set_bit(HCI_QUIRK_SIMULTANEOUS_DISCOVERY, &hdev->quirks);
-	}
-
-	if (id->driver_info & BTUSB_INTEL_NEW) {
-		hdev->send = btusb_send_frame_intel;
-		hdev->setup = btusb_setup_intel_new;
-		hdev->hw_error = btintel_hw_error;
-		hdev->set_bdaddr = btintel_set_bdaddr;
-		set_bit(HCI_QUIRK_STRICT_DUPLICATE_FILTER, &hdev->quirks);
-	}
+//	if (id->driver_info & BTUSB_INTEL) {
+//		hdev->setup = btusb_setup_intel;
+//		hdev->shutdown = btusb_shutdown_intel;
+//		hdev->set_bdaddr = btintel_set_bdaddr;
+//		set_bit(HCI_QUIRK_STRICT_DUPLICATE_FILTER, &hdev->quirks);
+//		set_bit(HCI_QUIRK_SIMULTANEOUS_DISCOVERY, &hdev->quirks);
+//	}
+//
+//	if (id->driver_info & BTUSB_INTEL_NEW) {
+//		hdev->send = btusb_send_frame_intel;
+//		hdev->setup = btusb_setup_intel_new;
+//		hdev->hw_error = btintel_hw_error;
+//		hdev->set_bdaddr = btintel_set_bdaddr;
+//		set_bit(HCI_QUIRK_STRICT_DUPLICATE_FILTER, &hdev->quirks);
+//	}
 
 	if (id->driver_info & BTUSB_MARVELL)
 		hdev->set_bdaddr = btusb_set_bdaddr_marvell;
