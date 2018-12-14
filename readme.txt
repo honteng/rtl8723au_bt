@@ -9,32 +9,25 @@ to try the other branches and to check the github issues.
 
 ===========================================================================================================
 
-In this document, we introduce how to support rtk 8723AE/AU BT driver in Linux system.
-Support kernel version 2.6.32~3.13.0
+In this document, we introduce how to support driver btusb with Realtek device support in Linux system.
 
 ===========================================================================================================
 
-1. Install
+1. To Install the driver:
 
 (1)	Change to the directory containing the source files.
 
 	make
 	sudo make install
 
+(2)	Remove the old btusb and insert the new module using
+	sudo modprobe -rv btusb
+	sudo modprobe -v btusb
+
 (2)	Insert RTK8723AE/AU dongle
 
 	Now RTK8723AE/AU can be recognized by the system and bluetooth function can be used.
 
-===========================================================================================================
-
-2. Uninstall
-
-(1)	unplug RTK8723AE/AU dongle 
-
-(2)	Uninstall	
-
-	sudo make uninstall
- 
 ===========================================================================================================
 
 3. Install BlueZ
