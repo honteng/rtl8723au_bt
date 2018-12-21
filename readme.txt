@@ -1,13 +1,3 @@
-Note:
-
-This repository has multiple branches with different implementations for
-Realtek bluetooth usb drivers. Depending on your kernel version and your
-hardware model different branches may or may not work. If you are unsure
-which branch to use you and you are on a modern kernel you should probably
-start with the 'kernel' branch. If that doesn't work you are encouraged
-to try the other branches and to check the github issues.
-
-===========================================================================================================
 
 In this document, we introduce how to support driver btusb with Realtek device support in Linux system.
 

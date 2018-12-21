@@ -382,7 +382,7 @@ int btrtl_setup_realtek(struct hci_dev *hdev)
 		return 0;
 	}
 }
-EXPORT_SYMBOL(btrtl_setup_realtek);
+EXPORT_SYMBOL_GPL(btrtl_setup_realtek);
 
 MODULE_AUTHOR("Daniel Drake <drake@endlessm.com>");
 MODULE_DESCRIPTION("Bluetooth support for Realtek devices ver " VERSION);
