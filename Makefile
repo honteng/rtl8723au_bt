@@ -4,6 +4,17 @@ MDL_DIR	:= /lib/modules/$(shell uname -r)
 DRV_DIR	:= $(MDL_DIR)/kernel/drivers/bluetooth
 EXTRA_CFLAGS += -DCONFIG_BT_RTL
 
+CONFIG_PLATFORM_FS_MX61 = y
+
+ifeq ($(CONFIG_PLATFORM_FS_MX61), y)
+ARCH := arm
+KDIR ?= $(KERNEL_SRC)
+MODDESTDIR := kernel/drivers/net/wireless/
+else
+KVER := $(shell uname -r)
+KDIR := /lib/modules/$(KVER)/build
+endif
+
 #Handle the compression option for modules in 3.18+
 ifneq ("","$(wildcard $(DRV_DIR)/*.ko.gz)")
 COMPRESS_GZIP := y
@@ -18,11 +29,12 @@ ifneq ($(KERNELRELEASE),)
 
 else
 	PWD := $(shell pwd)
-	KVER := $(shell uname -r)
-	KDIR := /lib/modules/$(KVER)/build
 
 all:
-	$(MAKE) -C $(KDIR) M=$(PWD) modules
+	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KDIR) M=$(PWD) modules
+
+modules_install:
+	$(MAKE) INSTALL_MOD_DIR=$(MODDESTDIR) -C $(KDIR) M=$(shell pwd) modules_install
 
 clean:
 	rm -rf *.o *.mod.c *.mod.o *.ko *.symvers *.order *.a
